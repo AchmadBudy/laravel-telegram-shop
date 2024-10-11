@@ -98,7 +98,7 @@ class TransactionResource extends Resource
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color((new OrderStatus())->getColor())
+                    ->color(OrderStatus::class)
                     ->searchable(),
                 TextColumn::make('total_price')
                     ->label('Total Price')

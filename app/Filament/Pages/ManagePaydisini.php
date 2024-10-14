@@ -29,25 +29,9 @@ class ManagePaydisini extends SettingsPage
 
     public function __construct()
     {
-        $this->listChannelPayment = collect([]);
-    }
-
-    protected function fillForm(): void
-    {
-        $this->callHook('beforeFill');
-
-        $settings = app(static::getSettings());
-
-
-        // call the method from PaydisiniService
-        // $paydisiniService = new PaydisiniService();
-
-
-        $data = $this->mutateFormDataBeforeFill($settings->toArray());
-
-        $this->form->fill($data);
-
-        $this->callHook('afterFill');
+        $this->listChannelPayment = collect(
+            (new PaydisiniSettings())->payment_channel
+        );
     }
 
     public function form(Form $form): Form
@@ -58,6 +42,8 @@ class ManagePaydisini extends SettingsPage
                     ->schema([
                         TextInput::make('api_key')
                             ->label('API Key')
+                            ->password()
+                            ->revealable()
                             ->placeholder('Enter your API Key')
                             ->required(),
                         Select::make('fee_type')
@@ -70,7 +56,7 @@ class ManagePaydisini extends SettingsPage
 
                         Repeater::make('payment_channel')
                             ->schema([
-                                Select::make('channel_id')
+                                Select::make('id')
                                     ->label('Channel')
                                     ->options(
                                         $this->listChannelPayment
@@ -80,13 +66,22 @@ class ManagePaydisini extends SettingsPage
                                     ->reactive()
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                                        $channelId = $get('channel_id');
-                                        $set('channel_name', $this->listChannelPayment->where('id', $channelId)->first()['name']);
+                                        $channelId = $get('id');
+                                        $set('name', $this->listChannelPayment->where('id', $channelId)->first()['name']);
+                                        $set('fee', $this->listChannelPayment->where('id', $channelId)->first()['fee']);
+                                        $set('minimum', $this->listChannelPayment->where('id', $channelId)->first()['minimum']);
                                     })
-                                    ->searchable()
                                     ->required(),
-                                TextInput::make('channel_name')
+                                TextInput::make('name')
                                     ->label('Channel Name')
+                                    ->readOnly()
+                                    ->required(),
+                                TextInput::make('fee')
+                                    ->label('Channel Fee')
+                                    ->readOnly()
+                                    ->required(),
+                                TextInput::make('minimum')
+                                    ->label('Channel Minimal Payment')
                                     ->readOnly()
                                     ->required(),
                             ])

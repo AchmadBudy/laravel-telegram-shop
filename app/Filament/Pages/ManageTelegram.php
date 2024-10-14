@@ -20,6 +20,8 @@ class ManageTelegram extends SettingsPage
 
     protected static string $settings = TelegramSettings::class;
 
+    protected static ?string $navigationGroup = 'Settings';
+
     public function form(Form $form): Form
     {
         return $form

@@ -2,9 +2,15 @@
 
 namespace App\Services;
 
+use App\Models\TelegramUser;
 use App\Settings\TelegramSettings;
+use App\Telegram\Commands\StartCommand;
+use App\Telegram\Context\CaraOrderContext;
+use App\Telegram\Context\InformationContext;
+use App\Telegram\Context\StockContext;
 use Telegram\Bot\BotsManager;
 use Telegram\Bot\Commands\HelpCommand;
+use Telegram\Bot\Keyboard\Keyboard;
 
 class TelegramService
 {
@@ -20,9 +26,14 @@ class TelegramService
         $teleSettings = new TelegramSettings();
 
         $this->queries = [];
-        $this->context = [];
+        $this->context = [
+            InformationContext::class,
+            CaraOrderContext::class,
+            StockContext::class,
+        ];
         $this->commands = [
             HelpCommand::class,
+            StartCommand::class,
         ];
 
         $config = [
@@ -79,12 +90,155 @@ class TelegramService
     }
 
     /**
+     * Send message
+     * 
+     * @param string $chatId
+     * @param string $message
+     * @param string $parseMode
+     * 
+     * @return array
+     */
+    public function sendMessage(string $chatId, string $message, string $parseMode = 'Markdown', null|string $button = null): array
+    {
+        try {
+            $message = [
+                'chat_id' => $chatId,
+                'text' => $message,
+                'parse_mode' => $parseMode,
+            ];
+
+            if ($button) {
+                $message['reply_markup'] = $button;
+            }
+
+            $this->telegram->sendMessage($message);
+        } catch (\Throwable $th) {
+            return [
+                'success' => false,
+                'message' => $th->getMessage()
+            ];
+        }
+
+        return [
+            'success' => true,
+        ];
+    }
+
+    /**
+     * Check if user is registered
+     */
+    public function checkRegistered($idUser): array
+    {
+        $user = TelegramUser::where('telegram_id', $idUser)->first();
+
+        if (!$user) {
+            return [
+                'success' => false,
+                'message' => 'User not registered'
+            ];
+        }
+
+        return [
+            'success' => true,
+            'data' => $user
+        ];
+    }
+
+    /**
      * Register command
      * 
      * @return array
      */
     public function registerCommand($idUser, $username, $firstName, $lastName): array
     {
-        return [];
+        // get telegram setting
+        $teleSettings = new TelegramSettings();
+        // get user if exist
+        $user = TelegramUser::where('telegram_id', $idUser)->first();
+
+        $button = Keyboard::make()
+            ->setResizeKeyboard(true)
+            ->setOneTimeKeyboard(false)
+            ->row([
+                Keyboard::button(['text' => '🛒 Stock']),
+                Keyboard::button(['text' => '📝 Cara Order']),
+            ])
+            ->row([
+                Keyboard::button(['text' => 'Informasi']),
+                Keyboard::button(['text' => 'Deposit']),
+            ]);
+
+        if ($user) {
+            return $this->sendMessage(
+                $idUser,
+                <<<EOD
+                👋 Selamat datang di {$teleSettings->store_name}
+                ─────〔 DATA USER 〕─────
+                🆔 ID: {$idUser}
+                🧑 Nama: {$firstName} {$lastName}
+                📊 Saldo: Rp. {$user->balance}
+                username: {$username}
+
+                📝 Anda sudah terdaftar di sistem kami.
+                Jika ada pertanyaan, silahkan hubungi admin. @{$teleSettings->owner_username}
+                EOD,
+                button: $button
+            );
+        }
+
+        // register user
+        $user = TelegramUser::create([
+            'telegram_id' => $idUser,
+            'username' => $username,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'balance' => 0,
+        ]);
+
+        return $this->sendMessage(
+            $idUser,
+            <<<EOD
+            👋 Selamat datang di {$teleSettings->store_name}
+            ─────〔 DATA USER 〕─────
+            🆔 ID: {$idUser}
+            🧑 Nama: {$firstName} {$lastName}
+            📊 Saldo: Rp. {$user->balance}
+            username: {$username}
+
+            📝 Anda berhasil terdaftar di sistem kami.
+            Jika ada pertanyaan, silahkan hubungi admin. @{$teleSettings->owner_username}
+            EOD,
+            button: $button
+        );
+    }
+
+    /**
+     * Escape markdown v2
+     * 
+     * @param string $text
+     * @return string
+     */
+    public static function escapeMarkdownV2($text)
+    {
+        $specialChars = ['\\', '_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
+        foreach ($specialChars as $char) {
+            $text = str_replace($char, '\\' . $char, $text);
+        }
+        return $text;
+    }
+
+    /**
+     * Escape markdown
+     * 
+     * @param string $text
+     * @return string
+     */
+    public static function escapeMarkdown($text)
+    {
+        $specialChars = ['_', '*', '`', '['];
+        foreach ($specialChars as $char) {
+            $text = str_replace($char, '\\' . $char, $text);
+        }
+        return $text;
     }
 }

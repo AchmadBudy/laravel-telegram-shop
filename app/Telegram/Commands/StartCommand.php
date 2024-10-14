@@ -9,11 +9,12 @@ use Telegram\Bot\Commands\Command;
 
 /**
  * This command can be triggered in two ways:
- * /start and /join due to the alias.
+ * /start and /register due to the alias.
  */
 class StartCommand extends Command
 {
     protected string $name = 'start';
+    protected string $alias = 'register';
     protected string $description = 'command to register user';
 
     public function handle()
@@ -23,6 +24,7 @@ class StartCommand extends Command
         $firstName = $this->getUpdate()->getMessage()->from->firstName;
         $lastName = $this->getUpdate()->getMessage()->from->lastName;
 
-        // (new TelegramService())->registerCommand($idUser, $username, $firstName, $lastName);
+        $teleService = new TelegramService();
+        $teleService->registerCommand($idUser, $username, $firstName, $lastName);
     }
 }

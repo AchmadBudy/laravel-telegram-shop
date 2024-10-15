@@ -7,6 +7,7 @@ use App\Settings\TelegramSettings;
 use App\Telegram\Commands\DepositCommand;
 use App\Telegram\Commands\StartCommand;
 use App\Telegram\Context\CaraOrderContext;
+use App\Telegram\Context\CariContext;
 use App\Telegram\Context\DepositContext;
 use App\Telegram\Context\InformationContext;
 use App\Telegram\Context\StockContext;
@@ -40,6 +41,7 @@ class TelegramService
             CaraOrderContext::class,
             StockContext::class,
             DepositContext::class,
+            CariContext::class
         ];
         $this->commands = [
             HelpCommand::class,

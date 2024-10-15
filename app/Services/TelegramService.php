@@ -4,10 +4,15 @@ namespace App\Services;
 
 use App\Models\TelegramUser;
 use App\Settings\TelegramSettings;
+use App\Telegram\Commands\DepositCommand;
 use App\Telegram\Commands\StartCommand;
 use App\Telegram\Context\CaraOrderContext;
+use App\Telegram\Context\DepositContext;
 use App\Telegram\Context\InformationContext;
 use App\Telegram\Context\StockContext;
+use App\Telegram\Queries\CancelPaymentQuery;
+use App\Telegram\Queries\CheckPaymentQuery;
+use App\Telegram\Queries\DepositQuery;
 use Telegram\Bot\BotsManager;
 use Telegram\Bot\Commands\HelpCommand;
 use Telegram\Bot\Keyboard\Keyboard;
@@ -25,15 +30,21 @@ class TelegramService
     {
         $teleSettings = new TelegramSettings();
 
-        $this->queries = [];
+        $this->queries = [
+            CancelPaymentQuery::class,
+            CheckPaymentQuery::class,
+            DepositQuery::class
+        ];
         $this->context = [
             InformationContext::class,
             CaraOrderContext::class,
             StockContext::class,
+            DepositContext::class,
         ];
         $this->commands = [
             HelpCommand::class,
             StartCommand::class,
+            DepositCommand::class,
         ];
 
         $config = [
@@ -125,6 +136,34 @@ class TelegramService
     }
 
     /**
+     * Delete message
+     * 
+     * @param string $chatId
+     * @param int $messageId
+     *
+     * @return array
+     */
+    public function deleteMessage(string $chatId, int $messageId): array
+    {
+        try {
+            $this->telegram->deleteMessage([
+                'chat_id' => $chatId,
+                'message_id' => $messageId
+            ]);
+        } catch (\Throwable $th) {
+            return [
+                'success' => false,
+                'message' => $th->getMessage()
+            ];
+        }
+
+        return [
+            'success' => true,
+        ];
+    }
+
+
+    /**
      * Check if user is registered
      */
     public function checkRegistered($idUser): array
@@ -165,7 +204,7 @@ class TelegramService
             ])
             ->row([
                 Keyboard::button(['text' => 'Informasi']),
-                Keyboard::button(['text' => 'Deposit']),
+                Keyboard::button(['text' => 'Cara Deposit']),
             ]);
 
         if ($user) {

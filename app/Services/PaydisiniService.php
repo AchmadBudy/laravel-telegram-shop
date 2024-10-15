@@ -63,7 +63,7 @@ class PaydisiniService
                 throw new \Exception($response->json());
             }
         } catch (\Throwable $e) {
-            return ['success' => false, 'message' => $e->getMessage()];
+            return ['success' => false, 'msg' => $e->getMessage()];
         }
     }
 
@@ -76,9 +76,13 @@ class PaydisiniService
             'signature' => md5($this->key . $uniqueCode . 'StatusTransaction')
         ];
 
-        $response = Http::asForm()->post($this->url, $body);
+        try {
+            $response = Http::asForm()->post($this->url, $body);
 
-        return $response->json();
+            return $response->json();
+        } catch (\Throwable $e) {
+            return ['success' => false, 'msg' => $e->getMessage()];
+        }
     }
 
     public function cancelTransaction(string $uniqueCode): bool|array
@@ -90,8 +94,12 @@ class PaydisiniService
             'signature' => md5($this->key . $uniqueCode . 'CancelTransaction')
         ];
 
-        $response = Http::asForm()->post($this->url, $body);
+        try {
+            $response = Http::asForm()->post($this->url, $body);
 
-        return $response->json();
+            return $response->json();
+        } catch (\Throwable $e) {
+            return ['success' => false, 'msg' => $e->getMessage()];
+        }
     }
 }

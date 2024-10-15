@@ -8,9 +8,9 @@ use Telegram\Bot\Events\UpdateEvent;
 use Telegram\Bot\Exceptions\TelegramSDKException;
 use Telegram\Bot\Keyboard\Keyboard;
 
-class InformationContext extends AbstractContext
+class DepositContext extends AbstractContext
 {
-    protected static string $regex = '/(information|informasi|info)/i';
+    protected static string $regex = '/(cara deposit)/i';
 
     /**
      * @param UpdateEvent $event
@@ -37,26 +37,18 @@ class InformationContext extends AbstractContext
             $telegramId,
             <<<EOD
         👋 Selamat datang di {$teleSettings->store_name}
-        ─────〔 DATA USER 〕─────
-        🆔 ID: {$telegramId}
-        🧑 Nama: {$user->first_name} {$user->last_name}
-        📊 Saldo: Rp. {$user->balance}
-        username: {$user->username}
+            
+        📌 Deposit
+        Silahkan lakukan "/deposit <jumlah>" untuk melakukan deposit.
 
-        📝 Anda sudah terdaftar di sistem kami.
+        💡 Contoh:
+        /deposit 100000
+
+        📝 Note:
+        - Minimal deposit adalah Rp. 1000
+
         Jika ada pertanyaan, silahkan hubungi admin. @{$teleSettings->owner_username}
-        EOD,
-            button: Keyboard::make()
-                ->setResizeKeyboard(true)
-                ->setOneTimeKeyboard(false)
-                ->row([
-                    Keyboard::button(['text' => '🛒 Stock']),
-                    Keyboard::button(['text' => '📝 Cara Order']),
-                ])
-                ->row([
-                    Keyboard::button(['text' => 'Informasi']),
-                    Keyboard::button(['text' => 'Cara Deposit']),
-                ])
+        EOD
         );
     }
 }

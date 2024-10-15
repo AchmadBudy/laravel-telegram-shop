@@ -14,12 +14,14 @@ class TransactionDetail extends Model
         'transaction_id',
         'product_id',
         'quantity',
-        'price',
+        'price_each',
+        'price_total',
     ];
 
     protected $casts = [
         'quantity' => 'integer',
-        'price' => 'integer',
+        'price_each' => 'integer',
+        'price_total' => 'integer',
     ];
 
     /**

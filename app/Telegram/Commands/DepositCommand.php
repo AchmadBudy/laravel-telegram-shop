@@ -29,7 +29,7 @@ class DepositCommand extends Command
         $paydisiniSettings = new PaydisiniSettings();
 
         $amount = $this->argument('amount');
-        if (!is_numeric($amount) || $amount < 1000) {
+        if (!is_numeric($amount) || $amount < 500) {
             $telegramService->sendMessage($telegramId, 'Mohon masukkan nominal deposit yang valid.');
             return;
         }

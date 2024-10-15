@@ -63,7 +63,7 @@ class DepositQuery extends AbstractQuery
         $telegramService->deleteMessage($telegramId, $event->update->callbackQuery->message->messageId);
 
         // send message to user
-        $event->telegram->sendPhoto([
+        $message = $event->telegram->sendPhoto([
             'chat_id' => $telegramId,
             'photo' => InputFile::create($response['data']['qrcode_url']),
             'caption' => <<<EOD
@@ -88,6 +88,11 @@ class DepositQuery extends AbstractQuery
                     ],
                 ]
             ])
+        ]);
+
+        // update message id
+        $depositHistory->update([
+            'message_id' => $message->messageId
         ]);
 
 

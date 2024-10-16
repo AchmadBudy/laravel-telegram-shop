@@ -179,7 +179,7 @@ class PaymentService
                     $productMessage .= "➜ {$detail->product->name} | {$detail->quantity}x\n";
                     $productMessage .= "➜ Harga Satuan : Rp" . number_format($detail->price_each) . "\n";
                     $productMessage .= "```Item\n";
-                    if ($detail->quantity < 2) {
+                    if ($detail->quantity < 15) {
                         foreach ($detail->product->items as $item) {
                             $productMessage .= "➜ {$item->item}\n";
                         }
@@ -325,7 +325,7 @@ class PaymentService
                 ➜ Harga Satuan : Rp {$product->price}
                 EOD;
                 $productMessage .= "```Item\n";
-                if ($amount < 3) {
+                if ($amount < 15) {
                     foreach ($productItem as $item) {
                         $productMessage .= "➜ {$item->item}\n";
                     }

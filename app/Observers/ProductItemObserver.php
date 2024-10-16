@@ -27,10 +27,12 @@ class ProductItemObserver
      */
     public function deleted(ProductItem $productItem): void
     {
-        // update product stock
-        $product = $productItem->product;
-        $product->stock -= 1;
-        $product->save();
+        // update product stock if product item is_sold is false
+        if (!$productItem->is_sold) {
+            $product = $productItem->product;
+            $product->stock -= 1;
+            $product->save();
+        }
     }
 
     /**

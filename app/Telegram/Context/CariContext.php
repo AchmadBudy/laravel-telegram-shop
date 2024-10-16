@@ -54,7 +54,9 @@ class CariContext extends AbstractContext
                 📦 *{$product->name}*
                 💰 Rp. {$product->price}
                 📝 {$product->description}
-
+                🛒 Stock => {$product->stock}
+                ++++++++++++++++++++++++++++++++
+                
                 EOD;
 
                 $keyboard->row([

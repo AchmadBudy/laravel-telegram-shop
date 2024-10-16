@@ -55,7 +55,8 @@ class PaydisiniController extends Controller
                         $telegramService->telegram->sendDocument([
                             'chat_id' => $response['telegram']->telegram_id,
                             'document' => $response['file_path'],
-                            'caption' => $response['messageToUser']
+                            'caption' => $response['messageToUser'],
+                            'parse_mode' => 'Markdown',
                         ]);
                     } catch (\Throwable $th) {
                         Log::error('Failed to send file: ' . $uniqueCode);

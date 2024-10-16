@@ -7,6 +7,7 @@ use App\Models\DepositHistory;
 use App\Models\TelegramUser;
 use App\Services\PaydisiniService;
 use App\Services\TelegramService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Telegram\Bot\Events\UpdateEvent;
 use Telegram\Bot\Exceptions\TelegramSDKException;
@@ -31,69 +32,76 @@ class DepositQuery extends AbstractQuery
         $serviceCode = $arguments[1];
         $amount = $arguments[2];
 
-        // create transaction code
-        $transactionCode = 'DEPOSIT-' . $telegramId . '-' . time();
 
-        // send api call to paydisini
-        $response = $paydisiniService->createTransaction($transactionCode, $amount, $serviceCode, 'Deposit balance Rp. ' . number_format($amount, 0, ',', '.'));
-        if (!$response['success']) {
-            Log::error($response);
-            $telegramService->sendMessage($telegramId, 'Mohon maaf, terjadi kesalahan saat melakukan deposit. Silakan coba beberapa saat lagi.');
+        DB::beginTransaction();
+        try {
+            // get telegram user
+            $telegramUser = TelegramUser::where('telegram_id', $telegramId)->first();
+            // create record in deposithistory
+            $depositHistory = DepositHistory::create([
+                'telegram_user_id' => $telegramUser->id,
+                'total_deposit' => $amount,
+                'status' => OrderStatus::PENDING,
+                'service_code' => $serviceCode,
+            ]);
+
+            // create transaction code
+            $transactionCode = 'DEPOSIT-' .  Str::padLeft($depositHistory->id, 15, '0');
+
+            // send api call to paydisini
+            $response = $paydisiniService->createTransaction($transactionCode, $amount, $serviceCode, 'Deposit balance Rp. ' . number_format($amount, 0, ',', '.'));
+            if (!$response['success']) {
+                Log::error($response);
+                $telegramService->sendMessage($telegramId, 'Mohon maaf, terjadi kesalahan saat melakukan deposit. Silakan coba beberapa saat lagi.');
+                throw new \Exception('Failed to create transaction');
+            }
+            // delete message
+            $telegramService->deleteMessage($telegramId, $event->update->callbackQuery->message->messageId);
+
+            // send message to user
+            $message = $event->telegram->sendPhoto([
+                'chat_id' => $telegramId,
+                'photo' => InputFile::create($response['data']['qrcode_url']),
+                'caption' => <<<EOD
+             Total deposit: Rp. {$amount}
+             Payment type: {$response['data']['service_name']}
+             Payment number: {$transactionCode}
+ 
+             Silahkan lakukan pembayaran sebelum batas waktu yang ditentukan.
+             exp date: {$response['data']['expired']}
+             EOD,
+                'reply_markup' => json_encode([
+                    'inline_keyboard' => [
+                        [
+                            [
+                                'text' => 'Cek Pembayaran',
+                                'callback_data' => 'check_payment_' . $transactionCode
+                            ],
+                            [
+                                'text' => 'Batal',
+                                'callback_data' => 'cancel_payment_' . $transactionCode
+                            ]
+                        ],
+                    ]
+                ])
+            ]);
+
+            // update message id
+            $depositHistory->update([
+                'message_id' => $message->messageId,
+                'transaction_code' => $transactionCode,
+                'payment_type' => $response['data']['service_name'],
+                'payment_status' => Str::lower($response['data']['status']),
+                'payment_link' => $response['data']['checkout_url'],
+                'payment_qr' => $response['data']['qrcode_url'],
+                'payment_number' => $transactionCode,
+            ]);
+
+            DB::commit();
+        } catch (\Throwable $th) {
+            DB::rollBack();
             return true;
         }
-
-        // get telegram user
-        $telegramUser = TelegramUser::where('telegram_id', $telegramId)->first();
-
-        // create record in deposithistory
-        $depositHistory = DepositHistory::create([
-            'telegram_user_id' => $telegramUser->id,
-            'total_deposit' => $amount,
-            'status' => OrderStatus::PENDING,
-            'transaction_code' => $transactionCode,
-            'service_code' => $serviceCode,
-            'payment_type' => $response['data']['service_name'],
-            'payment_status' => Str::lower($response['data']['status']),
-            'payment_link' => $response['data']['checkout_url'],
-            'payment_qr' => $response['data']['qrcode_url'],
-            'payment_number' => $transactionCode,
-        ]);
-
-        // delete message
-        $telegramService->deleteMessage($telegramId, $event->update->callbackQuery->message->messageId);
-
-        // send message to user
-        $message = $event->telegram->sendPhoto([
-            'chat_id' => $telegramId,
-            'photo' => InputFile::create($response['data']['qrcode_url']),
-            'caption' => <<<EOD
-            Total deposit: Rp. {$amount}
-            Payment type: {$response['data']['service_name']}
-            Payment number: {$transactionCode}
-
-            Silahkan lakukan pembayaran sebelum batas waktu yang ditentukan.
-            exp date: {$response['data']['expired']}
-            EOD,
-            'reply_markup' => json_encode([
-                'inline_keyboard' => [
-                    [
-                        [
-                            'text' => 'Cek Pembayaran',
-                            'callback_data' => 'check_payment_' . $transactionCode
-                        ],
-                        [
-                            'text' => 'Batal',
-                            'callback_data' => 'cancel_payment_' . $transactionCode
-                        ]
-                    ],
-                ]
-            ])
-        ]);
-
-        // update message id
-        $depositHistory->update([
-            'message_id' => $message->messageId
-        ]);
 
 
         return true;

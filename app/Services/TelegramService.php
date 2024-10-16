@@ -2,7 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\OrderStatus;
+use App\Models\Product;
+use App\Models\ProductItem;
 use App\Models\TelegramUser;
+use App\Models\Transaction;
 use App\Settings\TelegramSettings;
 use App\Telegram\Commands\DepositCommand;
 use App\Telegram\Commands\StartCommand;
@@ -12,8 +16,15 @@ use App\Telegram\Context\DepositContext;
 use App\Telegram\Context\InformationContext;
 use App\Telegram\Context\StockContext;
 use App\Telegram\Queries\CancelPaymentQuery;
+use App\Telegram\Queries\CancelProductQuery;
+use App\Telegram\Queries\CheckoutProductQuery;
 use App\Telegram\Queries\CheckPaymentQuery;
+use App\Telegram\Queries\ContinueProductQuery;
+use App\Telegram\Queries\DecreamentProductQuery;
 use App\Telegram\Queries\DepositQuery;
+use App\Telegram\Queries\IncreamentProductQuery;
+use App\Telegram\Queries\OrderProductQuery;
+use Illuminate\Support\Facades\DB;
 use Telegram\Bot\BotsManager;
 use Telegram\Bot\Commands\HelpCommand;
 use Telegram\Bot\Keyboard\Keyboard;
@@ -34,7 +45,13 @@ class TelegramService
         $this->queries = [
             CancelPaymentQuery::class,
             CheckPaymentQuery::class,
-            DepositQuery::class
+            DepositQuery::class,
+            OrderProductQuery::class,
+            IncreamentProductQuery::class,
+            DecreamentProductQuery::class,
+            CancelProductQuery::class,
+            ContinueProductQuery::class,
+            CheckoutProductQuery::class,
         ];
         $this->context = [
             InformationContext::class,
@@ -124,7 +141,7 @@ class TelegramService
                 $message['reply_markup'] = $button;
             }
 
-            $this->telegram->sendMessage($message);
+            $response  = $this->telegram->sendMessage($message);
         } catch (\Throwable $th) {
             return [
                 'success' => false,
@@ -134,6 +151,7 @@ class TelegramService
 
         return [
             'success' => true,
+            'message_id' => $response->message_id
         ];
     }
 
@@ -252,6 +270,110 @@ class TelegramService
             button: $button
         );
     }
+
+    /**
+     * Show Order product
+     * 
+     * @param string $idProduct
+     * 
+     * @return array
+     */
+    public function showOrderProduct(string $idProduct, int|null $amount = null, bool $decreament = false, bool $increament = false): array
+    {
+        try {
+            // find product
+            $product = Product::query()
+                ->active()
+                ->where('id', $idProduct)
+                ->first();
+
+            if (!$product) {
+                throw new \Exception('Product tidak ditemukan/tidak aktif');
+            }
+
+            if ($amount === null) {
+                $amount = 1;
+            }
+
+            if ($decreament) {
+                $amount = $amount - 1;
+            } elseif ($increament) {
+                $amount = $amount + 1;
+            }
+
+            // check amount
+            if ($amount < 1) {
+                throw new \Exception('Jumlah tidak valid');
+            }
+
+            // check stock
+            if ($product->stock < $amount) {
+                throw new \Exception('Stock tidak cukup');
+            }
+
+            // create beli semua amount
+            if ($product->stock > 2) {
+                $amountAll = $product->stock - 1;
+            } else {
+                $amountAll = $product->stock;
+            }
+
+            $keyboard = Keyboard::make()
+                ->inline()
+                ->row([
+                    Keyboard::inlineButton([
+                        'text' => '➖',
+                        'callback_data' => 'decreament_product_' . $product->id . '_' . $amount
+                    ]),
+                    Keyboard::inlineButton([
+                        'text' => 'Beli Semua',
+                        'callback_data' => 'continue_order_' . $product->id . '_' . $amountAll
+                    ]),
+                    Keyboard::inlineButton([
+                        'text' => '➕',
+                        'callback_data' => 'increament_product_' . $product->id . '_' . $amount
+                    ]),
+                ])
+                ->row([
+                    Keyboard::inlineButton([
+                        'text' => 'Cancel',
+                        'callback_data' => 'cancel_order'
+                    ]),
+                ])
+                ->row([
+                    Keyboard::inlineButton([
+                        'text' => 'Order',
+                        'callback_data' => 'continue_order_' . $product->id . '_' . $amount
+                    ]),
+                ]);
+            $totalPrice = $product->price * $amount;
+            $message = <<<EOD
+            ==========================
+            📦 *{$product->name}*
+            💰 Rp. {$product->price}
+            📝 {$product->description}
+            ==========================
+            Jumlah: {$amount}
+            Total: Rp. {$totalPrice}
+            ==========================
+            EOD;
+        } catch (\Throwable $th) {
+            return [
+                'success' => false,
+                'message' => $th->getMessage()
+            ];
+        }
+
+
+        return [
+            'success' => true,
+            'data' => [
+                'message' => $message,
+                'keyboard' => $keyboard
+            ]
+        ];
+    }
+
 
     /**
      * Escape markdown v2

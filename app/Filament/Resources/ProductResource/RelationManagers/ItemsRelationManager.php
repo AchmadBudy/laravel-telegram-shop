@@ -29,8 +29,7 @@ class ItemsRelationManager extends RelationManager
                 Section::make()
                     ->schema([
                         Textarea::make('item')
-                            ->required()
-                            ->maxLength(100),
+                            ->required(),
                     ]),
             ]);
     }

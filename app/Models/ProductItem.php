@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Observers\ProductItemObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+#[ObservedBy([ProductItemObserver::class])]
 class ProductItem extends Model
 {
     use HasFactory;

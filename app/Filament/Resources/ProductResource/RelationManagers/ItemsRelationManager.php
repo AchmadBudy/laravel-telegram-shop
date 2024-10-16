@@ -14,7 +14,9 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\DB;
 
 class ItemsRelationManager extends RelationManager
 {
@@ -57,7 +59,37 @@ class ItemsRelationManager extends RelationManager
                     ]),
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
+                Tables\Actions\CreateAction::make()
+                    ->using(function (array $data, string $model): Model {
+                        $items = explode("\n", $data['item']);
+
+                        DB::beginTransaction();
+                        try {
+                            $dataToInsert = [];
+                            foreach ($items as $item) {
+                                $dataToInsert[] = [
+                                    'item' => $item,
+                                    'is_sold' => false,
+                                    'product_id' => $this->ownerRecord->id,
+                                    'created_at' => now(),
+                                ];
+                            }
+
+                            $this->ownerRecord->items()->insert($dataToInsert);
+
+                            // update stock
+                            $product = $this->ownerRecord;
+                            $product->stock += count($items);
+                            $product->save();
+
+                            DB::commit();
+                        } catch (\Throwable $th) {
+                            DB::rollBack();
+                            return null;
+                        }
+
+                        return $this->ownerRecord;
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

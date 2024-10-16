@@ -14,6 +14,8 @@ class Transaction extends Model
     protected $fillable = [
         'telegram_user_id',
         'total_price',
+        'total_price_original',
+        'discount',
         'status',
         'message_id',
         'payment_type',

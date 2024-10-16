@@ -6,6 +6,7 @@ use App\Services\PaydisiniService;
 use App\Settings\PaydisiniSettings;
 use Filament\Actions;
 use Filament\Forms;
+use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -34,12 +35,40 @@ class ManagePaydisini extends SettingsPage
         );
     }
 
+    protected function fillForm(): void
+    {
+        $this->callHook('beforeFill');
+
+        $settings = app(static::getSettings());
+
+        $data = $this->mutateFormDataBeforeFill($settings->toArray());
+        $data['webhook_url'] = url('/api/paydisini/webhook/response');
+        $this->form->fill($data);
+
+        $this->callHook('afterFill');
+    }
+
     public function form(Form $form): Form
     {
         return $form
             ->schema([
                 Section::make()
                     ->schema([
+                        TextInput::make('webhook_url')
+                            ->label('Webhook For Paydisini')
+                            ->default(url('/api/paydisini/webhook/response'))
+                            ->disabled()
+                            ->suffixAction(
+                                Action::make('copy')
+                                    ->icon('heroicon-s-clipboard-document-check')
+                                    ->action(function ($livewire, $state) {
+                                        $livewire->js(
+                                            'window.navigator.clipboard.writeText("' . $state . '");
+                                            $tooltip("' . __('Copied to clipboard') . '", { timeout: 1500 });'
+                                        );
+                                    })
+
+                            ),
                         TextInput::make('api_key')
                             ->label('API Key')
                             ->password()

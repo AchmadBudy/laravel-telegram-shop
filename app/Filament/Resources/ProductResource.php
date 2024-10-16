@@ -70,6 +70,8 @@ class ProductResource extends Resource
                     ->label('Name'),
                 TextColumn::make('price')
                     ->money('IDR'),
+                TextColumn::make('stock')
+                    ->label('Stock'),
                 TextColumn::make('available_items_count')
                     ->label('Available Items')
                     ->counts('availableItems'),

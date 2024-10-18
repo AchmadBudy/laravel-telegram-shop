@@ -17,7 +17,7 @@ use Telegram\Bot\Keyboard\Keyboard;
 class DepositCommand extends Command
 {
     protected string $name = 'deposit';
-    protected string $alias = 'depo';
+    protected array $aliases = ['depo'];
     protected string $description = 'command to deposit';
     protected string $pattern = '{amount}';
 

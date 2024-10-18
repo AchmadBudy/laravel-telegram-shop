@@ -14,7 +14,7 @@ use Telegram\Bot\Commands\Command;
 class StartCommand extends Command
 {
     protected string $name = 'start';
-    protected string $alias = 'register';
+    protected array $aliases  = ['register'];
     protected string $description = 'command to register user';
 
     public function handle()

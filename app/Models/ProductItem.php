@@ -17,7 +17,7 @@ class ProductItem extends Model
         'product_id',
         'item',
         'is_sold',
-        'transaction_id',
+        'transaction_detail_id',
     ];
 
     protected $casts = [
@@ -51,8 +51,8 @@ class ProductItem extends Model
     /**
      * Get the transaction that owns the item.
      */
-    public function transaction(): BelongsTo
+    public function transaction_id(): BelongsTo
     {
-        return $this->belongsTo(Transaction::class);
+        return $this->belongsTo(TransactionDetail::class);
     }
 }

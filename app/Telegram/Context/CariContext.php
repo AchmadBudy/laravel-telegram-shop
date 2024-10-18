@@ -5,6 +5,7 @@ namespace App\Telegram\Context;
 use App\Models\Product;
 use App\Services\TelegramService;
 use App\Settings\TelegramSettings;
+use Illuminate\Support\Facades\Log;
 use Telegram\Bot\Events\UpdateEvent;
 use Telegram\Bot\Exceptions\TelegramSDKException;
 use Telegram\Bot\Keyboard\Keyboard;
@@ -50,7 +51,7 @@ class CariContext extends AbstractContext
             $keyboard = Keyboard::make()
                 ->inline();
 
-            foreach ($products->get() as $product) {
+            foreach ($products as $product) {
                 $productsMessage .= <<<EOD
                 📦 *{$product->name}*
                 💰 Rp. {$product->price}
@@ -84,5 +85,7 @@ class CariContext extends AbstractContext
             EOD,
             button: $keyboard ?? null
         );
+
+        return true;
     }
 }

@@ -34,14 +34,6 @@ class Transaction extends Model
     }
 
     /**
-     * Get all of the items for the transaction.
-     */
-    public function items(): HasMany
-    {
-        return $this->hasMany(ProductItem::class);
-    }
-
-    /**
      * Get all of the details for the transaction.
      */
     public function details(): HasMany

@@ -87,6 +87,17 @@ class PaymentService
                     'transaction_id' => null
                 ]);
 
+                // update product stock
+                $details = TransactionDetail::where('transaction_id', $transaction->id)
+                    ->get();
+                foreach ($details as $detail) {
+                    $product = Product::where('id', $detail->product_id)
+                        ->lockForUpdate()
+                        ->first();
+                    $product->stock += $detail->quantity;
+                    $product->save();
+                }
+
                 $telegramUser = TelegramUser::where('id', $transaction->telegram_user_id)->first();
             }
 
@@ -315,6 +326,7 @@ class PaymentService
                     'status' => OrderStatus::SUCCESS,
                     'payment_status' => OrderStatus::SUCCESS,
                     'payment_number' => $paymentNumber,
+                    'payment_type' => 'balance',
                 ]);
 
                 // make message for user
@@ -405,6 +417,86 @@ class PaymentService
             'messageToUser' => $message,
             'isFile' => $isFile ?? false,
             'file_path' => $file ?? null
+        ];
+    }
+
+
+    /**
+     * Get Item from transaction
+     * 
+     * @param string $transactionCode
+     * 
+     * @return array
+     */
+    public function getItemFromTransaction(string $transactionCode): array
+    {
+        try {
+            $transaction = Transaction::where('payment_number', $transactionCode)
+                ->where('status', OrderStatus::SUCCESS)
+                ->first();
+
+            if (!$transaction) {
+                throw new \Exception('Transaction not found');
+            }
+
+            // get all product item
+            $details = TransactionDetail::where('transaction_id', $transaction->id)
+                ->with(['product', 'product.items' => function ($query) use ($transaction) {
+                    $query->where('transaction_id', $transaction->id);
+                }])
+                ->get();
+
+            // make message for user
+            $productMessageFile = '';
+            $productMessage = '';
+            $isFile = false;
+            foreach ($details as $detail) {
+                $productMessage .= "➜ {$detail->product->name} | {$detail->quantity}x\n";
+                $productMessage .= "➜ Harga Satuan : Rp" . number_format($detail->price_each) . "\n";
+                $productMessage .= "```Item\n";
+                if ($detail->quantity < 15) {
+                    foreach ($detail->product->items as $item) {
+                        $productMessage .= "➜ {$item->item}\n";
+                    }
+                } else {
+                    $productMessage .= "➜ Terlalu banyak item untuk ditampilkan, item akan dilampirkan melalui file\n";
+                    $isFile = true;
+                    $productMessageFile .= "Item {$detail->product->name}\n";
+                    foreach ($detail->product->items as $item) {
+                        $productMessageFile .= "➜ {$item->item}\n";
+                    }
+                }
+                $productMessage .= "```";
+            }
+            $message = <<<EOD
+            *🔰 Payment Invoice*
+            Items :
+            {$productMessage}
+
+            Detail :
+            ➜ Order ID : {$transaction->payment_number}
+            ➜ Total Harga : Rp {$transaction->total_price}
+            ➜ Status : Berhasil
+            ➜ Payment Method : Balance
+            ➜ Tanggal : {$transaction->updated_at}
+            EOD;
+
+            if ($isFile) {
+                $file = InputFile::createFromContents($productMessageFile, 'invoice.txt');
+            }
+        } catch (\Throwable $th) {
+            return [
+                'success' => false,
+                'message' => $th->getMessage()
+            ];
+        }
+        return [
+            'success' => true,
+            'data' => $transaction,
+            'messageToUser' => $message,
+            'isFile' => $isFile ?? false,
+            'file_path' => $file ?? null,
+            'telegram' => TelegramUser::where('id', $transaction->telegram_user_id)->first()
         ];
     }
 }

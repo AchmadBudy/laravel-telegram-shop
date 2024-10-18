@@ -28,11 +28,11 @@ enum OrderStatus: string implements HasColor, HasIcon, HasLabel
     public function getColor(): string | array | null
     {
         return match ($this) {
-            self::PENDING => 'gray',
-            self::SUCCESS => 'green',
-            self::CANCELBYUSER => 'red',
-            self::CANCELBYADMIN => 'red',
-            self::CANCELBYTIMEOUT => 'red',
+            self::PENDING => 'warning',
+            self::SUCCESS => 'success',
+            self::CANCELBYUSER => 'danger',
+            self::CANCELBYADMIN => 'danger',
+            self::CANCELBYTIMEOUT => 'danger',
         };
     }
 

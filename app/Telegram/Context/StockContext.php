@@ -47,6 +47,10 @@ class StockContext extends AbstractContext
             $message .= "====================\n\n";
         }
 
+        if ($products->isEmpty()) {
+            $message .= '⚠Produk lagi kosong⚠';
+        }
+
         $telegramService->sendMessage(
             $telegramId,
             $telegramService->escapeMarkdown($message),

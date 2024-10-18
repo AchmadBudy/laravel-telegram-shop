@@ -39,11 +39,12 @@ class CariContext extends AbstractContext
         $products = Product::query()
             ->active()
             ->whereLike('name', '%' . $search . '%', caseSensitive: false)
-            ->limit(3);
+            ->limit(3)
+            ->get();
 
         $productsMessage = '';
         $keyboard = '';
-        if ($products->count() === 0) {
+        if ($products->isEmpty()) {
             $productsMessage = '⚠Produk tidak ditemukan⚠';
         } else {
             $keyboard = Keyboard::make()

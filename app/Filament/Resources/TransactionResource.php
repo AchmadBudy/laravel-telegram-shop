@@ -24,6 +24,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 
 class TransactionResource extends Resource
@@ -253,7 +254,7 @@ class TransactionResource extends Resource
         ];
     }
 
-    protected function cannEdit(): bool
+    public static function canEdit(Model $record): bool
     {
         return false;
     }

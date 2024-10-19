@@ -239,6 +239,13 @@ class TelegramService
                 username: {$username}
 
                 📝 Anda sudah terdaftar di sistem kami.
+                Untuk melihat stock, cara order, informasi, dan cara deposit silahkan klik tombol dibawah.
+                atau bisa ketik stock untuk melihat stock produk.
+                atau ketik cara order untuk melihat cara order produk.
+                dan ketik cara deposit untuk melihat cara deposit.
+
+                dan juga untuk mencari produk silahkan ketik "cari <nama produk>"
+
                 Jika ada pertanyaan, silahkan hubungi admin. @{$teleSettings->owner_username}
                 EOD,
                 button: $button

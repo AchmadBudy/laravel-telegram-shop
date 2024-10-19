@@ -46,7 +46,7 @@ class DepositQuery extends AbstractQuery
             ]);
 
             // create transaction code
-            $transactionCode = 'DEPOSIT-' .  Str::padLeft($depositHistory->id, 15, '0');
+            $transactionCode = 'DEPOSIT-TELE' .  Str::padLeft($depositHistory->id, 11, '0');
 
             // send api call to paydisini
             $response = $paydisiniService->createTransaction($transactionCode, $amount, $serviceCode, 'Deposit balance Rp. ' . number_format($amount, 0, ',', '.'));

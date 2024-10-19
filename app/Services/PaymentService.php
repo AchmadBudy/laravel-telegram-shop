@@ -287,7 +287,7 @@ class PaymentService
             ]);
 
             // create payment number
-            $paymentNumber = 'PAYMENT-' . Str::padLeft($transaction->id, 15, '0');
+            $paymentNumber = 'PAYMENT-TELE' . Str::padLeft($transaction->id, 11, '0');
 
 
             // get product item

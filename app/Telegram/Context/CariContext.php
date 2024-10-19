@@ -40,7 +40,7 @@ class CariContext extends AbstractContext
         $products = Product::query()
             ->active()
             ->whereLike('name', '%' . $search . '%', caseSensitive: false)
-            ->limit(3)
+            ->limit(6)
             ->get();
 
         $productsMessage = '';
@@ -80,7 +80,7 @@ class CariContext extends AbstractContext
             $productsMessage
 
             Note: 
-            produk yang ditampilkan adalah maksimal 3 produk teratas yang ditemukan.
+            produk yang ditampilkan adalah maksimal 6 produk teratas yang ditemukan.
             Jika ada pertanyaan, silahkan hubungi admin. @{$teleSettings->owner_username}
             EOD,
             button: $keyboard ?? null

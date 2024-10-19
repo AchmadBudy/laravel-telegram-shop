@@ -34,7 +34,7 @@ class Home extends Component
             ->get();
 
         $this->products = Product::query()
-            ->select('id', 'name', 'price', 'category_id')
+            ->select('id', 'name', 'price', 'category_id', 'description')
             ->active()
             ->orderBy('created_at', 'desc')
             ->with('category')
@@ -45,7 +45,7 @@ class Home extends Component
     {
         $this->selectedCategory = $value;
         $this->products = Product::query()
-            ->select('id', 'name', 'price', 'category_id')
+            ->select('id', 'name', 'price', 'category_id', 'description')
             ->active()
             ->orderBy('created_at', 'desc')
             ->when($this->selectedCategory != 'all', function ($query) {

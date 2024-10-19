@@ -30,7 +30,7 @@
         <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
             @forelse ($products as $product)
                 <div class="col" wire:key={{ $product->id }}>
-                    <div class="card mb-4 rounded-3 shadow-sm">
+                    <div class="card mb-4 rounded-3 shadow-sm h-100">
                         <div class="card-header py-3">
                             <h4 class="my-0 fw-normal">{{ $product->name }}</h4>
                             <span class="text-muted">({{ $product->category->name }})</span>
@@ -39,7 +39,7 @@
                             <h1 class="card-title pricing-card-title">
                                 Rp.{{ Number::format($product->price, locale: 'ID') }}
                             </h1>
-                            <span class="text-muted">10 users included</span>
+                            <span class="text-muted">{{ $product->description }}</span>
                         </div>
                     </div>
                 </div>

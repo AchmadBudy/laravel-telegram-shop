@@ -12,7 +12,7 @@ use Telegram\Bot\Keyboard\Keyboard;
 
 class CariContext extends AbstractContext
 {
-    protected static string $regex = '/(cari|find|search)/i';
+    protected static string $regex = '/(cari|find|search|buy)/i';
 
     /**
      * @param UpdateEvent $event

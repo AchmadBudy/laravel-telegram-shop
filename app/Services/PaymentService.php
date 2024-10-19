@@ -442,9 +442,7 @@ class PaymentService
 
             // get all product item
             $details = TransactionDetail::where('transaction_id', $transaction->id)
-                ->with(['product', 'product.items' => function ($query) use ($transaction) {
-                    $query->where('transaction_id', $transaction->id);
-                }])
+                ->with(['product', 'items'])
                 ->get();
 
             // make message for user
@@ -456,14 +454,14 @@ class PaymentService
                 $productMessage .= "➜ Harga Satuan : Rp" . number_format($detail->price_each) . "\n";
                 $productMessage .= "```Item\n";
                 if ($detail->quantity < 15) {
-                    foreach ($detail->product->items as $item) {
+                    foreach ($detail->items as $item) {
                         $productMessage .= "➜ {$item->item}\n";
                     }
                 } else {
                     $productMessage .= "➜ Terlalu banyak item untuk ditampilkan, item akan dilampirkan melalui file\n";
                     $isFile = true;
                     $productMessageFile .= "Item {$detail->product->name}\n";
-                    foreach ($detail->product->items as $item) {
+                    foreach ($detail->items as $item) {
                         $productMessageFile .= "➜ {$item->item}\n";
                     }
                 }

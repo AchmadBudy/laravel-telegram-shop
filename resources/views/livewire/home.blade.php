@@ -27,7 +27,7 @@
         </div>
 
 
-        <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
+        <div class="row row-cols-1 row-cols-md-3 mb-3 text-center g-4">
             @forelse ($products as $product)
                 <div class="col" wire:key={{ $product->id }}>
                     <div class="card mb-4 rounded-3 shadow-sm h-100">

@@ -202,11 +202,9 @@ class TransactionResource extends Resource
                         try {
                             $response = $paymentService->getItemFromTransaction($records->payment_number);
                             if (!$response['success']) {
-                                Log::info($response);
 
                                 throw new \Exception($response['message']);
                             }
-                            Log::info($response);
                             // send new message but check if isFile is true or false
                             if ($response['isFile']) {
                                 $telegramService->telegram->sendDocument([

@@ -214,7 +214,7 @@ class PaymentService
                 ➜ Order ID : {$transaction->payment_number}
                 ➜ Total Harga : Rp {$transaction->total_price}
                 ➜ Status : Berhasil
-                ➜ Payment Method : Balance
+                ➜ Payment Method : {$transaction->payment_type}
                 ➜ Tanggal : {$transaction->updated_at}
                 EOD;
 
@@ -476,7 +476,7 @@ class PaymentService
             ➜ Order ID : {$transaction->payment_number}
             ➜ Total Harga : Rp {$transaction->total_price}
             ➜ Status : Berhasil
-            ➜ Payment Method : Balance
+            ➜ Payment Method : {$transaction->payment_type}
             ➜ Tanggal : {$transaction->updated_at}
             EOD;
 

@@ -38,6 +38,7 @@ class StockContext extends AbstractContext
             ->get();
 
         $message = "📦 Daftar Produk Di $teleSettings->store_name\n\n";
+        $message .= "Untuk melakukan pembelian, silakan ketik 'cari [nama produk]' atau simpel nya 'cari viu'.\n\n";
 
         foreach ($products as $product) {
             $message .= "====================\n";
@@ -50,6 +51,8 @@ class StockContext extends AbstractContext
         if ($products->isEmpty()) {
             $message .= '⚠Produk lagi kosong⚠';
         }
+
+        $message .= "\n\nUntuk melakukan pembelian, silakan ketik 'cari [nama produk]' atau simpel nya 'cari viu'.";
 
         $telegramService->sendMessage(
             $telegramId,

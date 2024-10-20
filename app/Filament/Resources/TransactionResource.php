@@ -182,6 +182,11 @@ class TransactionResource extends Resource
                             }
 
                             $telegramService->sendMessage($response['telegram']->telegram_id, 'Pembayaran telah dibatalkan.');
+                            Notification::make()
+                                ->success()
+                                ->title('Cancel success')
+                                ->body("Cancel pada transaksi {$records->payment_number} berhasil")
+                                ->send();
                         } catch (\Exception $e) {
                             Notification::make()
                                 ->warning()
@@ -216,6 +221,12 @@ class TransactionResource extends Resource
                             } else {
                                 $telegramService->sendMessage($response['telegram']->telegram_id, $response['messageToUser']);
                             }
+
+                            Notification::make()
+                                ->success()
+                                ->title('Resend success')
+                                ->body("Resend item pada transaksi {$records->payment_number} berhasil")
+                                ->send();
                         } catch (\Exception $e) {
                             Notification::make()
                                 ->warning()

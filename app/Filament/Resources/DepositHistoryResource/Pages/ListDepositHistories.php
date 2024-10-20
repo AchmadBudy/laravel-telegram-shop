@@ -74,7 +74,11 @@ class ListDepositHistories extends ListRecords
 
                         // send message to user
                         $telegramService->sendMessage($telegramUser->telegram_id, $message);
-
+                        Notification::make()
+                            ->success()
+                            ->title('Deposit success')
+                            ->body("Deposit Rp." . number_format($depositHistory->total_deposit, 0, ',', '.') . " berhasil ke user " . $telegramUser->telegram_id)
+                            ->send();
 
                         DB::commit();
                     } catch (\Throwable $th) {
@@ -85,12 +89,6 @@ class ListDepositHistories extends ListRecords
                             ->body($th->getMessage())
                             ->send();
                     }
-
-                    Notification::make()
-                        ->success()
-                        ->title('Deposit success')
-                        ->body("Deposit Rp." . number_format($depositHistory->total_deposit, 0, ',', '.') . " berhasil ke user " . $telegramUser->telegram_id)
-                        ->send();
                 }),
         ];
     }

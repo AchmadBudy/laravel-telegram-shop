@@ -81,6 +81,7 @@ class CariContext extends AbstractContext
 
             Note: 
             produk yang ditampilkan adalah maksimal 6 produk teratas yang ditemukan.
+            Untuk membeli produk nya silahkan klik tombol dibawah ini.
             Jika ada pertanyaan, silahkan hubungi admin. @{$teleSettings->owner_username}
             EOD,
             button: $keyboard ?? null

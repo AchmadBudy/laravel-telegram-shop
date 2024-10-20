@@ -68,6 +68,6 @@ Cofigurasi setelah itu harus setting paydisini dan telegram di admin panel
 
 -   [ ] Perbaiki View pada admin transaksi
 -   [ ] Perbaiki navigasi pada admin panel
--   [ ] Menambahkan halaman utama untuk menampilkan produk dan link ke bot telegram
+-   [x] Menambahkan halaman utama untuk menampilkan produk dan link ke bot telegram
 
 todo akan bertambah kalau kepirinan dan untuk mempercantik aplikasi

@@ -106,7 +106,16 @@ class TransactionResource extends Resource
                             ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                 $price = $get('product_id') ? \App\Models\Product::find($get('product_id'))?->price : 0;
                                 $quantity = $state;
-                                $set('unit_price', $price * $quantity);
+                                $discount = $get('discount') ?? 0;
+                                $unitPrice = $price * $quantity;
+                                $finalPrice = $unitPrice - $discount;
+                                $set('unit_price', $unitPrice);
+                                if ($finalPrice < 0) {
+                                    $set('discount', $unitPrice);
+                                    $set('total_price', 0);
+                                } else {
+                                    $set('total_price', $finalPrice);
+                                }
                             })
                             ->required()
                             ->columnSpan(1),

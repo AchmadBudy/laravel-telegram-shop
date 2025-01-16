@@ -41,8 +41,11 @@ class TransactionResource extends Resource
                     ->schema([
                         Select::make('telegram_user_id')
                             ->label('Telegram User')
-                            ->options(TelegramUser::all()->pluck('telegram_id', 'id'))
-                            ->searchable(),
+                            ->relationship(
+                                name: 'user'
+                            )
+                            ->getOptionLabelFromRecordUsing(fn(Model $record) => "{$record->username} {$record->telegram_id}")
+                            ->searchable(['username', 'telegram_id']),
                         TextInput::make('discount')
                             ->label('Discount')
                             ->numeric()

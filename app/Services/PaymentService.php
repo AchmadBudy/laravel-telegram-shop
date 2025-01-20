@@ -11,7 +11,6 @@ use App\Models\TelegramUser;
 use App\Models\Transaction;
 use App\Models\TransactionDetail;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Telegram\Bot\FileUpload\InputFile;
 use Illuminate\Support\Str;
 
@@ -104,7 +103,7 @@ class PaymentService
                 $telegramUser = TelegramUser::where('id', $transaction->telegram_user_id)->first();
             }
 
-            // send cancel request to paydisini if cancelbyuser or cancelbyadmin
+            // send cancel request to payment merchant if cancelbyuser or cancelbyadmin
             if ($cancelByUser || $cancelByAdmin) {
                 $response = $this->paydisiniService->cancelTransaction($transactionCode);
                 if (!$response['success']) {
@@ -368,7 +367,7 @@ class PaymentService
                     $file = InputFile::createFromContents($productMessageFile, 'invoice.txt');
                 }
             } else {
-                // call paydisini
+                // call payment merchant
                 $response = $this->paydisiniService->createTransaction($paymentNumber, $totalPrice, $paymentMethod, 'Payment for ' . $amount . 'x ' . $product->name);
                 if (!$response['success']) {
                     throw new \Exception($response['msg']);

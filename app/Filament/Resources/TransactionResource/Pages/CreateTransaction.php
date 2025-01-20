@@ -29,11 +29,21 @@ class CreateTransaction extends CreateRecord
                 $data['payment_method']  = 'balance';
             }
 
+            // get product id and quantity from  products
+            $productId = collect($data['products'])->map(function ($product) {
+                return ['product_id' => $product['product_id'], 'quantity' => $product['quantity']];
+            })->toArray();
+
+            // check if product is 2 or more
+            if (count($productId) > 1) {
+                throw new \Exception('You can only buy 1 product at a time');
+            }
+
             // call payment service to create transaction
             $response = $paymentService->createPaymentSingleProduct(
                 $telegramUser->telegram_id,
-                $data['product_id'],
-                $data['quantity'],
+                $productId[0]['product_id'],
+                $productId[0]['quantity'],
                 $data['payment_method'],
                 $data['discount']
             );

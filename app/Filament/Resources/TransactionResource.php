@@ -41,19 +41,25 @@ class TransactionResource extends Resource
                     ->schema([
                         Select::make('telegram_user_id')
                             ->label('Telegram User')
-                            ->options(TelegramUser::all()->pluck('telegram_id', 'id'))
-                            ->searchable(),
+                            ->relationship(
+                                name: 'user'
+                            )
+                            ->getOptionLabelFromRecordUsing(fn(Model $record) => "{$record->username} {$record->telegram_id}")
+                            ->searchable(['username', 'telegram_id'])
+                            ->preload(),
                         TextInput::make('discount')
                             ->label('Discount')
                             ->numeric()
                             ->default(0)
+                            ->prefix('Rp.')
                             ->minValue(0)
                             ->live(onBlur: true)
                             ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                                $totalPrice = $get('unit_price') ?? 0;
-                                $discount = $state;
-                                $finalPrice = $totalPrice - $discount;
-                                if ($finalPrice < 0) {
+                                $totalPrice = $get('total_price') ?? 0;
+                                $finalPrice = $totalPrice - $state;
+                                if ($state == 0) {
+                                    self::updateTotals($set, $get);
+                                } elseif ($finalPrice < 0) {
                                     $set('discount', $totalPrice);
                                     $set('total_price', 0);
                                 } else {
@@ -63,6 +69,7 @@ class TransactionResource extends Resource
                         TextInput::make('total_price')
                             ->label('Total Price')
                             ->numeric()
+                            ->prefix('Rp.')
                             ->default(0)
                             ->disabled()
                             ->dehydrated()
@@ -70,65 +77,135 @@ class TransactionResource extends Resource
                         Select::make('payment_method')
                             ->label('Payment Method')
                             ->options(collect((new PaydisiniSettings())->payment_channel)->pluck('name', 'id'))
-                            ->required(),
+                            ->required()
+                            ->visibleOn('create'),
+                        TextInput::make('payment_type')
+                            ->label('Payment Method')
+                            ->disabled()
+                            ->dehydrated()
+                            ->required()
+                            ->visibleOn('view'),
+                        Select::make('payment_status')
+                            ->label('Payment Status')
+                            ->options(OrderStatus::class)
+                            ->visibleOn('view'),
                     ]),
-                Section::make()
+                Repeater::make('products')
+                    ->label('Products')
                     ->schema([
                         Select::make('product_id')
                             ->label('Product')
                             ->options(\App\Models\Product::active()->pluck('name', 'id'))
-                            ->distinct()
-                            ->reactive()
                             ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                            ->live()
                             ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                // get price for each product
                                 $price = \App\Models\Product::find($state)?->price ?? 0;
+                                // update price each
+                                $set('price_each', $price);
+
+                                // update price total
                                 $quantity = $get('quantity') ?? 1;
-                                $discount = $get('discount') ?? 0;
-                                $unitPrice = $price * $quantity;
-                                $finalPrice = $unitPrice - $discount;
-                                $set('unit_price', $unitPrice);
-                                if ($finalPrice < 0) {
-                                    $set('discount', $unitPrice);
-                                    $set('total_price', 0);
-                                } else {
-                                    $set('total_price', $finalPrice);
-                                }
+                                $priceTotal = $price * $quantity;
+                                $set('price_total', $priceTotal);
                             })
-                            ->searchable()
-                            ->columnSpan(1)
                             ->required(),
                         TextInput::make('quantity')
                             ->label('Quantity')
                             ->numeric()
                             ->default(1)
-                            ->minValue(1)
-                            ->reactive()
+                            ->live(onBlur: true)
                             ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                                $price = $get('product_id') ? \App\Models\Product::find($get('product_id'))?->price : 0;
+                                $price = $get('price_each') ?? 0;
                                 $quantity = $state;
-                                $discount = $get('discount') ?? 0;
-                                $unitPrice = $price * $quantity;
-                                $finalPrice = $unitPrice - $discount;
-                                $set('unit_price', $unitPrice);
-                                if ($finalPrice < 0) {
-                                    $set('discount', $unitPrice);
-                                    $set('total_price', 0);
-                                } else {
-                                    $set('total_price', $finalPrice);
-                                }
+                                $priceTotal = $price * $quantity;
+                                $set('price_total', $priceTotal);
                             })
-                            ->required()
-                            ->columnSpan(1),
-                        TextInput::make('unit_price')
-                            ->label('Total Price Product')
-                            ->disabled()
-                            ->dehydrated()
+                            ->required(),
+                        TextInput::make('price_each')
+                            ->label('Price Each')
+                            ->prefix('Rp.')
                             ->numeric()
                             ->default(0)
-                            ->columnSpanFull()
-                            ->required(),
+                            ->required()
+                            ->disabled(),
+                        TextInput::make('price_total')
+                            ->label('Price Total')
+                            ->prefix('Rp.')
+                            ->numeric()
+                            ->default(0)
+                            ->required()
+                            ->disabled(),
                     ])
+                    ->columns(4)
+                    ->maxItems(1)
+                    ->required()
+                    ->deletable(false)
+                    ->live()
+                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get) {
+                        self::updateTotals($set, $get);
+                    })
                     ->visibleOn('create')
+                    ->columnSpanFull(),
+
+                Repeater::make('details')
+                    ->relationship('details')
+                    ->label('Products')
+                    ->schema([
+                        Select::make('product_id')
+                            ->label('Product')
+                            ->options(\App\Models\Product::active()->pluck('name', 'id'))
+                            ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                            ->live()
+                            ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                // get price for each product
+                                $price = \App\Models\Product::find($state)?->price ?? 0;
+                                // update price each
+                                $set('price_each', $price);
+
+                                // update price total
+                                $quantity = $get('quantity') ?? 1;
+                                $priceTotal = $price * $quantity;
+                                $set('price_total', $priceTotal);
+                            })
+                            ->required(),
+                        TextInput::make('quantity')
+                            ->label('Quantity')
+                            ->numeric()
+                            ->default(1)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                $price = $get('price_each') ?? 0;
+                                $quantity = $state;
+                                $priceTotal = $price * $quantity;
+                                $set('price_total', $priceTotal);
+                            })
+                            ->required(),
+                        TextInput::make('price_each')
+                            ->label('Price Each')
+                            ->prefix('Rp.')
+                            ->numeric()
+                            ->default(0)
+                            ->required()
+                            ->disabled(),
+                        TextInput::make('price_total')
+                            ->label('Price Total')
+                            ->prefix('Rp.')
+                            ->numeric()
+                            ->default(0)
+                            ->required()
+                            ->disabled(),
+                    ])
+                    ->columns(4)
+                    ->maxItems(1)
+                    ->required()
+                    ->deletable(false)
+                    ->live()
+                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get) {
+                        self::updateTotals($set, $get);
+                    })
+                    ->visibleOn('view')
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -138,6 +215,9 @@ class TransactionResource extends Resource
             ->columns([
                 TextColumn::make('user.telegram_id')
                     ->label('Telegram User')
+                    ->description(function (Transaction $record) {
+                        return $record->user->username;
+                    })
                     ->searchable(),
                 TextColumn::make('payment_number')
                     ->label('Payment Number')
@@ -275,5 +355,25 @@ class TransactionResource extends Resource
     public static function canEdit(Model $record): bool
     {
         return false;
+    }
+
+    private static function updateTotals(Forms\Set $set, Forms\Get $get): void
+    {
+        // retrive all product in details
+        $selectedProduct = collect($get('products'))->filter(fn($item) => !empty($item['product_id']));
+
+        // get all price
+        $totalPrice = \App\Models\Product::find($selectedProduct->pluck('product_id'))->pluck('price', 'id');
+        // get subtotal price based on the selected product and quantities
+        $totalPrice = $selectedProduct->reduce(function ($subtotal, $item) use ($totalPrice) {
+            return $subtotal + ($totalPrice[$item['product_id']] * $item['quantity']);
+        }, 0);
+
+        // update total price but check if discount is set
+        $discount = $get('discount') ?? 0;
+        $finalPrice = $totalPrice - $discount;
+
+        // update total price
+        $set('total_price', $finalPrice);
     }
 }
